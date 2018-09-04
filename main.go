@@ -29,6 +29,7 @@ func notFound(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
+
 	fmt.Println("server running on port 3000")
 	r := mux.NewRouter()
 	r.NotFoundHandler = http.HandlerFunc(notFound)
