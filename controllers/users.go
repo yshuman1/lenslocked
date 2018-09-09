@@ -7,6 +7,7 @@ import (
 	"lenslocked.com/views"
 )
 
+// NewUsers creates a newuser controller
 func NewUsers() *Users {
 	return &Users{
 		NewView: views.NewView("bootstrap", "views/users/new.gohtml"),
@@ -17,14 +18,20 @@ type Users struct {
 	NewView *views.View
 }
 
-//renders signup form
+// New renders signup form
 // GET /signup
 func (u *Users) New(w http.ResponseWriter, r *http.Request) {
-	u.NewView.Render(w, nil)
+	if err := u.NewView.Render(w, nil); err != nil {
+		panic(err)
+	}
 }
 
-//processes signup form to create user account
+// Create processes signup form to create user account
 // POST /signup
 func (u *Users) Create(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintln(w, "make a user brobro")
+	if err := r.ParseForm(); err != nil {
+		panic(err)
+	}
+	fmt.Fprintln(w, r.PostForm["email"])
+	fmt.Fprintln(w, r.PostForm["password"])
 }
