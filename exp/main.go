@@ -16,9 +16,17 @@ const (
 
 type User struct {
 	gorm.Model
-	Name  string
-	Email string `gorm:"not null;unique_index"`
-	Color string
+	Name   string
+	Email  string `gorm:"not null;unique_index"`
+	Color  string
+	Orders []Order
+}
+
+type Order struct {
+	gorm.Model
+	UserID      uint
+	Amount      int
+	Description string
 }
 
 func main() {
@@ -32,19 +40,29 @@ func main() {
 	defer db.Close()
 
 	db.LogMode(true)
-	db.AutoMigrate(&User{})
+	db.AutoMigrate(&User{}, &Order{})
 
 	var u User
-	db = db.Where("email = ?", "denssssa@yasin.io").First(&u)
-	if err := db.Where("email=?", "hahaha@haha.com").First(&u).Error; err != nil {
-		switch err {
-		case gorm.ErrRecordNotFound:
-			fmt.Println("No user found!")
-		case gorm.ErrInvalidSQL:
-			fmt.Println("query not written correctly fool!")
-		default:
-			panic(err)
-		}
+	if err := db.Preload("Orders").Where("email=?, email@yasin.io").First(&u).Error; err != nil {
+		panic(err)
 	}
 	fmt.Println(u)
+	fmt.Println(u.Orders)
+	createOrder(db, u, 1001, "fake desc #1")
+	createOrder(db, u, 9999, "fake desc #2")
+	createOrder(db, u, 125, "fake desc #3")
+	createOrder(db, u, 99099, "fake desc #4")
+	createOrder(db, u, 100, "fake desc #5")
+
+}
+
+func createOrder(db *gorm.DB, user User, amount int, desc string) {
+	err := db.Create(&Order{
+		UserID:      user.ID,
+		Amount:      amount,
+		Description: desc,
+	}).Error
+	if err != nil {
+		panic(err)
+	}
 }
