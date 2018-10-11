@@ -62,5 +62,3 @@ lenslocked.com
 images/**
 
 .config
-# dont want to commit lenslocked tutorial exp directory
-**/exp/*
