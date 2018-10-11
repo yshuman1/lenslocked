@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -35,9 +36,11 @@ func main() {
 	db.AutoMigrate(&User{})
 
 	var u User
-	newDB := db.Where("email = ?", "denssssa@yasin.io").First(&u)
-	if newDB.Error != nil {
-		panic(newDB.Error)
+	db = db.Where("email = ?", "denssssa@yasin.io").First(&u)
+	errors := db.GetErrors()
+	if len(errors) > 0 {
+		fmt.Println(errors)
+		os.Exit(1)
 	}
 
 	fmt.Println(u)
