@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
@@ -37,11 +36,15 @@ func main() {
 
 	var u User
 	db = db.Where("email = ?", "denssssa@yasin.io").First(&u)
-	errors := db.GetErrors()
-	if len(errors) > 0 {
-		fmt.Println(errors)
-		os.Exit(1)
+	if err := db.Where("email=?", "hahaha@haha.com").First(&u).Error; err != nil {
+		switch err {
+		case gorm.ErrRecordNotFound:
+			fmt.Println("No user found!")
+		case gorm.ErrInvalidSQL:
+			fmt.Println("query not written correctly fool!")
+		default:
+			panic(err)
+		}
 	}
-
 	fmt.Println(u)
 }
