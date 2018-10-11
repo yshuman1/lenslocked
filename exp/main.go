@@ -34,7 +34,8 @@ func main() {
 	db.LogMode(true)
 	db.AutoMigrate(&User{})
 
-	var u User
-	db.Last(&u, 6)
-	fmt.Println(u)
+	var users []User
+	db.Find(&users)
+	fmt.Println(len(users))
+	fmt.Println(users)
 }
