@@ -34,8 +34,11 @@ func main() {
 	db.LogMode(true)
 	db.AutoMigrate(&User{})
 
-	var users []User
-	db.Find(&users)
-	fmt.Println(len(users))
-	fmt.Println(users)
+	var u User
+	newDB := db.Where("email = ?", "denssssa@yasin.io").First(&u)
+	if newDB.Error != nil {
+		panic(newDB.Error)
+	}
+
+	fmt.Println(u)
 }
