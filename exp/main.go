@@ -23,10 +23,10 @@ func main() {
 		panic(err)
 	}
 	defer us.Close()
-	us.DestructiveReset()
-	// user, err := us.ByID(2)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// fmt.Println(user)
+	//	us.DestructiveReset()
+	user, err := us.ByID(2)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(user)
 }
