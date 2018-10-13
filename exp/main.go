@@ -3,8 +3,9 @@ package main
 import (
 	"fmt"
 
+	"lenslocked.com/models"
+
 	_ "github.com/jinzhu/gorm/dialects/postgres"
-	"github.com/yshuman1/lenslocked.com/models"
 )
 
 const (
@@ -23,7 +24,9 @@ func main() {
 	}
 	defer us.Close()
 	us.DestructiveReset()
-	// user, err := us.ByID(1)
-	//fmt.Println(user)
-
+	// user, err := us.ByID(2)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Println(user)
 }

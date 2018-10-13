@@ -16,7 +16,7 @@ func NewUserService(connectionInfo string) (*UserService, error) {
 	}
 	db.LogMode(true)
 
-	return *UserService{
+	return &UserService{
 		db: db,
 	}, nil
 }
@@ -30,7 +30,8 @@ func (us *UserService) ByID(id uint) (*User, error) {
 	err := us.db.Where("id = ?", id).First(&user).Error
 	switch err {
 	case nil:
-		return &user, gorm.ErrRecordNotFound
+		return &user, nil
+	case gorm.ErrRecordNotFound:
 		return nil, ErrNotFound
 	default:
 		return nil, err
@@ -41,7 +42,7 @@ func (us *UserService) Close() error {
 	return us.db.Close()
 }
 
-func (us *UserService) destructiveReset() {
+func (us *UserService) DestructiveReset() {
 	us.db.DropTableIfExists(&User{})
 	us.db.AutoMigrate(&User{})
 }
