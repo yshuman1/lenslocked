@@ -3,27 +3,35 @@ package main
 import (
 	"fmt"
 
-	_ "github.com/jinzhu/gorm/dialects/postgres"
-	"github.com/yshuman1/lenslocked.com/models"
+	"lenslocked.com/models"
+
+	_ "github.com/lib/pq"
 )
 
 const (
-	host   = "localhost"
-	port   = 5432
-	user   = "yasin"
-	dbname = "lenslocked_dev"
+	host     = "localhost"
+	port     = 5432
+	user     = "postgres"
+	password = "your-password"
+	dbname   = "lenslocked_dev"
 )
 
 func main() {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s dbname=%s sslmode=disable",
-		host, port, user, dbname)
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s "+
+		"password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
 	us, err := models.NewUserService(psqlInfo)
 	if err != nil {
 		panic(err)
 	}
 	defer us.Close()
 	us.DestructiveReset()
-	// user, err := us.ByID(1)
-	//fmt.Println(user)
 
+	// This will error because you DO NOT have a user with
+	// this ID, but we will create one soon.
+	user, err := us.ByID(1)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(user)
 }
