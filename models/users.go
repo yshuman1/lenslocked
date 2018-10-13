@@ -7,7 +7,7 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
-var ErrNotFound = errors.New("models: resource not found")
+var ErrNotFound = errors.New("models: Resource not found!")
 
 func NewUserService(connectionInfo string) (*UserService, error) {
 	db, err := gorm.Open("postgres", connectionInfo)
@@ -36,6 +36,10 @@ func (us *UserService) ByID(id uint) (*User, error) {
 	default:
 		return nil, err
 	}
+}
+
+func (us *UserService) Create(user *User) error {
+	return us.db.Create(user).Error
 }
 
 func (us *UserService) Close() error {
