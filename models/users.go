@@ -7,7 +7,10 @@ import (
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
 
-var ErrNotFound = errors.New("models: Resource not found!")
+var (
+	ErrNotFound  = errors.New("models: Resource not found!")
+	ErrInvalidID = errors.New("models:ID provided was invalid")
+)
 
 func NewUserService(connectionInfo string) (*UserService, error) {
 	db, err := gorm.Open("postgres", connectionInfo)
@@ -39,8 +42,11 @@ func (us *UserService) ByEmail(email string) (*User, error) {
 	return &user, err
 }
 
-func first(db *gorm.DB, user *User) error {
-	err := db.First(user).Error
+/*
+first will query the provided the gorm.DB and it will get the first item returned and place it into dst. if nothing is found in the query it will return ErrNotFound
+*/
+func first(db *gorm.DB, dst interface{}) error {
+	err := db.First(dst).Error
 	if err == gorm.ErrRecordNotFound {
 		return ErrNotFound
 	}
@@ -53,6 +59,14 @@ func (us *UserService) Create(user *User) error {
 
 func (us *UserService) Update(user *User) error {
 	return us.db.Save(user).Error
+}
+
+func (us *UserService) Delete(id uint) error {
+	if id == 0 {
+		return ErrInvalidID
+	}
+	user := User{Model: gorm.Model{ID: id}}
+	return us.db.Delete(&user).Error
 }
 
 func (us *UserService) Close() error {

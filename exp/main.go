@@ -32,16 +32,18 @@ func main() {
 	if err := us.Create(&user); err != nil {
 		panic(err)
 	}
-	user.Email = "michael@michaelscottpaperco.com"
-	if err := us.Update(&user); err != nil {
+	// user.Email = "michael@michaelscottpaperco.com"
+	// if err := us.Update(&user); err != nil {
+	// 	panic(err)
+	// }
+	// userByEmail, err := us.ByEmail("michael@michaelscottpaperco.com")
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// fmt.Println(userByEmail)
+	if err := us.Delete(user.ID); err != nil {
 		panic(err)
 	}
-	userByEmail, err := us.ByEmail("michael@michaelscottpaperco.com")
-	if err != nil {
-		panic(err)
-	}
-	fmt.Println(userByEmail)
-
 	userByID, err := us.ByID(user.ID)
 	if err != nil {
 		panic(err)
