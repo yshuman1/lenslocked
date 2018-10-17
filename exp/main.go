@@ -41,4 +41,10 @@ func main() {
 		panic(err)
 	}
 	fmt.Println(userByEmail)
+
+	userByID, err := us.ByID(user.ID)
+	if err != nil {
+		panic(err)
+	}
+	fmt.Println(userByID)
 }
