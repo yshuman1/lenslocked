@@ -8,7 +8,8 @@ import (
 )
 
 var (
-	ErrNotFound  = errors.New("models: Resource not found!")
+	ErrNotFound = errors.New("models: Resource not found!")
+
 	ErrInvalidID = errors.New("models:ID provided was invalid")
 )
 
@@ -73,9 +74,21 @@ func (us *UserService) Close() error {
 	return us.db.Close()
 }
 
-func (us *UserService) DestructiveReset() {
-	us.db.DropTableIfExists(&User{})
-	us.db.AutoMigrate(&User{})
+// DestructiveReset drops the user table and rebuilds it
+func (us *UserService) DestructiveReset() error {
+	if err := us.db.DropTableIfExists(&User{}).Error; err != nil {
+		return err
+	}
+	return us.AutoMigrate()
+}
+
+// AutoMigrate will attempt to automatically migrate the
+// users table
+func (us *UserService) AutoMigrate() error {
+	if err := us.db.AutoMigrate(&User{}).Error; err != nil {
+		return err
+	}
+	return nil
 }
 
 type User struct {
