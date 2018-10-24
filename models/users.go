@@ -13,6 +13,8 @@ var (
 	ErrNotFound = errors.New("models: Resource not found!")
 
 	ErrInvalidID = errors.New("models:ID provided was invalid")
+
+	ErrInvalidPassword = errors.New("models: incorrect password provided")
 )
 
 const userPwPepper = "O70Jb9hFLbCtXhk11VRk"
@@ -45,6 +47,24 @@ func (us *UserService) ByEmail(email string) (*User, error) {
 	db := us.db.Where("email = ?", email)
 	err := first(db, &user)
 	return &user, err
+}
+
+// authenticate can be used to auth a user with the provided email and password
+func (us *UserService) Authenticate(email, password string) (*User, error) {
+	foundUser, err := us.ByEmail(email)
+	if err != nil {
+		return nil, err
+	}
+	err = bcrypt.CompareHashAndPassword([]byte(foundUser.PasswordHash), []byte(password+userPwPepper))
+	if err != nil {
+		switch err {
+		case bcrypt.ErrMismatchedHashAndPassword:
+			return nil, err
+		default:
+			return nil, err
+		}
+	}
+	return foundUser, nil
 }
 
 /*
