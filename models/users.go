@@ -5,6 +5,8 @@ import (
 
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"lenslocked.com/hash"
+	"lenslocked.com/rand"
 
 	"golang.org/x/crypto/bcrypt"
 )
@@ -18,6 +20,7 @@ var (
 )
 
 const userPwPepper = "O70Jb9hFLbCtXhk11VRk"
+const hmacSecretKey = "secret-hmac-key"
 
 func NewUserService(connectionInfo string) (*UserService, error) {
 	db, err := gorm.Open("postgres", connectionInfo)
@@ -25,14 +28,16 @@ func NewUserService(connectionInfo string) (*UserService, error) {
 		return nil, err
 	}
 	db.LogMode(true)
-
+	hmac := hash.NewHMAC(hmacSecretKey)
 	return &UserService{
-		db: db,
+		db:   db,
+		hmac: hmac,
 	}, nil
 }
 
 type UserService struct {
-	db *gorm.DB
+	db   *gorm.DB
+	hmac hash.HMAC
 }
 
 func (us *UserService) ByID(id uint) (*User, error) {
@@ -47,6 +52,17 @@ func (us *UserService) ByEmail(email string) (*User, error) {
 	db := us.db.Where("email = ?", email)
 	err := first(db, &user)
 	return &user, err
+}
+
+// ByRemember looks up a user by the given remember token and returns that user. // this method will handle hashing the token
+func (us *UserService) ByRemember(token string) (*User, error) {
+	var user User
+	rememberHash := us.hmac.Hash(token)
+	err := first(us.db.Where("remember_hash = ?", rememberHash), &user)
+	if err != nil {
+		return nil, err
+	}
+	return &user, nil
 }
 
 // authenticate can be used to auth a user with the provided email and password
@@ -86,6 +102,15 @@ func (us *UserService) Create(user *User) error {
 	}
 	user.PasswordHash = string(hashedBytes)
 	user.Password = ""
+
+	if user.Remember == "" {
+		token, err := rand.RememberToken()
+		if err != nil {
+			return err
+		}
+		user.Remember = token
+	}
+	user.RememberHash = us.hmac.Hash(user.Remember)
 	return us.db.Create(user).Error
 }
 
@@ -128,4 +153,6 @@ type User struct {
 	Email        string `gorm:"not null; unique_index"`
 	Password     string `gorm:"-"`
 	PasswordHash string `gorm:"not null"`
+	Remember     string `gorm:"-"`
+	RememberHash string `gorm:"not null; unique_index"`
 }
