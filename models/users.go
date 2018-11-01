@@ -2,6 +2,7 @@ package models
 
 import (
 	"errors"
+	"strings"
 
 	"lenslocked.com/hash"
 	"lenslocked.com/rand"
@@ -154,6 +155,17 @@ type userValidator struct {
 	hmac hash.HMAC
 }
 
+// ByEmail will normalize email address before calling ByEmail on userDB field
+func (uv *userValidator) ByEmail(email string) (*User, error) {
+	user := User{
+		Email: email,
+	}
+	if err := runUserValFuncs(&user, uv.normalizeEmail); err != nil {
+		return nil, err
+	}
+	return uv.UserDB.ByEmail(user.Email)
+}
+
 // ByRemember will hash the remember token and then call
 // ByRemember on the subsequent UserDB layer.
 func (uv *userValidator) ByRemember(token string) (*User, error) {
@@ -169,7 +181,7 @@ func (uv *userValidator) ByRemember(token string) (*User, error) {
 // Create will create the provided user and backfill data
 // like the ID, CreatedAt, and UpdatedAt fields.
 func (uv *userValidator) Create(user *User) error {
-	err := runUserValFuncs(user, uv.bcryptPassword, uv.setRememberIfUnset, uv.hmacRemember)
+	err := runUserValFuncs(user, uv.bcryptPassword, uv.setRememberIfUnset, uv.hmacRemember, uv.normalizeEmail)
 	if err != nil {
 		return err
 	}
@@ -178,7 +190,7 @@ func (uv *userValidator) Create(user *User) error {
 
 // Update will hash a remember token if it is provided.
 func (uv *userValidator) Update(user *User) error {
-	err := runUserValFuncs(user, uv.bcryptPassword, uv.hmacRemember)
+	err := runUserValFuncs(user, uv.bcryptPassword, uv.hmacRemember, uv.normalizeEmail)
 	if err != nil {
 		return err
 	}
@@ -241,6 +253,11 @@ func (uv *userValidator) idGreaterThan(n uint) userValFunc {
 		return nil
 	})
 
+}
+
+func (uv *userValidator) normalizeEmail(user *User) error {
+	user.Email = strings.ToLower(strings.TrimSpace(user.Email))
+	return nil
 }
 
 var _ UserDB = &userGorm{}
