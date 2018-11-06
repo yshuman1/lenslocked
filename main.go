@@ -39,6 +39,7 @@ func main() {
 	r.HandleFunc("/cookietest", usersC.CookieTest).Methods("Get")
 
 	r.Handle("/galleries/new", galleriesC.New).Methods("Get")
+	r.HandleFunc("/galleries", galleriesC.Create).Methods("POST")
 
 	fmt.Println("server running on port :3000")
 	http.ListenAndServe(":3000", r)
