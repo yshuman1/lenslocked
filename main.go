@@ -27,6 +27,7 @@ func main() {
 
 	staticC := controllers.NewStatic()
 	usersC := controllers.NewUsers(services.User)
+	galleriesC := controllers.NewGalleries(services.Gallery)
 
 	r := mux.NewRouter()
 	r.Handle("/", staticC.Home).Methods("GET")
@@ -36,6 +37,9 @@ func main() {
 	r.Handle("/login", usersC.LoginView).Methods("GET")
 	r.HandleFunc("/login", usersC.Login).Methods("POST")
 	r.HandleFunc("/cookietest", usersC.CookieTest).Methods("Get")
+
+	r.Handle("/galleries/new", galleriesC.New).Methods("Get")
+
 	fmt.Println("server running on port :3000")
 	http.ListenAndServe(":3000", r)
 }
