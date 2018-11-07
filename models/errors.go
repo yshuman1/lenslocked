@@ -15,14 +15,16 @@ func (e modelError) Public() string {
 	return strings.Title(s)
 }
 
+type privateError string
+
+func (e privateError) Error() string {
+	return string(e)
+}
+
 var (
 	// ErrNotFound is returned when a resource cannot be found
 	// in the database.
 	ErrNotFound modelError = "models: resource not found"
-
-	// ErrIDInvalid is returned when an invalid ID is provided
-	// to a method like Delete.
-	ErrIDInvalid modelError = "models: ID provided was invalid"
 
 	// ErrPasswordIncorrect is returned when an invalid password
 	// is used when attempting to authenticate a user.
@@ -43,9 +45,19 @@ var (
 	// ErrPasswordRequired is returned when a user create is attempted without a pw being provided
 	ErrPasswordRequired modelError = "models: password is required"
 
-	// ErrRememberTooShort is returned when a remember token is not at least 32 bytes
-	ErrRememberTooShort modelError = "models: remember token must be at least 32 bytes"
-
 	// ErrRememberRequired is returned when a create or update is attempted without a user remember token
 	ErrRememberRequired modelError = "models: remember token is required"
+
+	// ErrIDInvalid is returned when an invalid ID is provided
+	// to a method like Delete.
+	ErrIDInvalid privateError = "models: ID provided was invalid"
+
+	// ErrRememberTooShort is returned when a remember token is not at least 32 bytes
+	ErrRememberTooShort privateError = "models: remember token must be at least 32 bytes"
+
+	// ErrUserIDRequired is returned when a user ID is incorrect or not provied
+	ErrUserIDRequired privateError = "models: user ID is required"
+
+	// ErrTitleRequired is returned if a gallery is created without a title
+	ErrTitleRequired modelError = "models: title is required"
 )
