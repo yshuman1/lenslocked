@@ -1,13 +1,12 @@
 package models
 
-import (
-	"github.com/jinzhu/gorm"
-)
+import "github.com/jinzhu/gorm"
 
-// Gallery is our image container that visitors view
+// Gallery is our image container resources that visitors
+// view
 type Gallery struct {
 	gorm.Model
-	UserID uint   `gorm: "not_null; index`
+	UserID uint   `gorm:"not_null;index"`
 	Title  string `gorm:"not_null"`
 }
 
@@ -16,7 +15,14 @@ type GalleryService interface {
 }
 
 type GalleryDB interface {
+	ByID(id uint) (*Gallery, error)
 	Create(gallery *Gallery) error
+}
+
+func NewGalleryService(db *gorm.DB) GalleryService {
+	return &galleryService{
+		GalleryDB: &galleryValidator{&galleryGorm{db}},
+	}
 }
 
 type galleryService struct {
@@ -27,34 +33,14 @@ type galleryValidator struct {
 	GalleryDB
 }
 
-type galleryGorm struct {
-	db *gorm.DB
-}
-
-func NewGalleryService(db *gorm.DB) GalleryService {
-	return &galleryService{
-		GalleryDB: &galleryValidator{&galleryGorm{db}},
-	}
-}
-
-type galleryValFunc func(*Gallery) error
-
-func runGalleryValFuncs(gallery *Gallery, fns ...galleryValFunc) error {
-	for _, fn := range fns {
-		if err := fn(gallery); err != nil {
-			return err
-		}
-	}
-	return nil
-}
-
 func (gv *galleryValidator) Create(gallery *Gallery) error {
-	err := runGalleryValFuncs(gallery, gv.titleRequired, gv.userIDRequired)
+	err := runGalleryValFuncs(gallery,
+		gv.userIDRequired,
+		gv.titleRequired)
 	if err != nil {
 		return err
 	}
 	return gv.GalleryDB.Create(gallery)
-
 }
 
 func (gv *galleryValidator) userIDRequired(g *Gallery) error {
@@ -73,6 +59,28 @@ func (gv *galleryValidator) titleRequired(g *Gallery) error {
 
 var _ GalleryDB = &galleryGorm{}
 
+type galleryGorm struct {
+	db *gorm.DB
+}
+
+func (gg *galleryGorm) ByID(id uint) (*Gallery, error) {
+	var gallery Gallery
+	db := gg.db.Where("id = ?", id)
+	err := first(db, &gallery)
+	return &gallery, err
+}
+
 func (gg *galleryGorm) Create(gallery *Gallery) error {
 	return gg.db.Create(gallery).Error
+}
+
+type galleryValFunc func(*Gallery) error
+
+func runGalleryValFuncs(gallery *Gallery, fns ...galleryValFunc) error {
+	for _, fn := range fns {
+		if err := fn(gallery); err != nil {
+			return err
+		}
+	}
+	return nil
 }
