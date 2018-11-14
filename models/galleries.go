@@ -7,7 +7,7 @@ import (
 // Gallery is our image container that visitors view
 type Gallery struct {
 	gorm.Model
-	userID uint   `gorm: "not_null; index`
+	UserID uint   `gorm: "not_null; index`
 	Title  string `gorm:"not_null"`
 }
 
@@ -58,7 +58,7 @@ func (gv *galleryValidator) Create(gallery *Gallery) error {
 }
 
 func (gv *galleryValidator) userIDRequired(g *Gallery) error {
-	if g.userID <= 0 {
+	if g.UserID <= 0 {
 		return ErrUserIDRequired
 	}
 	return nil
