@@ -23,18 +23,18 @@ type galleryService struct {
 	GalleryDB
 }
 
-func NewGalleryService(db *gorm.DB) GalleryService {
-	return &galleryService{
-		GalleryDB: &galleryValidator{&galleryGorm{db}},
-	}
-}
-
 type galleryValidator struct {
 	GalleryDB
 }
 
 type galleryGorm struct {
 	db *gorm.DB
+}
+
+func NewGalleryService(db *gorm.DB) GalleryService {
+	return &galleryService{
+		GalleryDB: &galleryValidator{&galleryGorm{db}},
+	}
 }
 
 type galleryValFunc func(*Gallery) error
