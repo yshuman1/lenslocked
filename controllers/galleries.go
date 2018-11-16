@@ -141,8 +141,7 @@ func (g *Galleries) Create(w http.ResponseWriter, r *http.Request) {
 	}
 	url, err := g.r.Get(EditGallery).URL("id", fmt.Sprintf("%v", gallery.ID))
 	if err != nil {
-		// TODO: Make this go to the index page
-		http.Redirect(w, r, "/", http.StatusFound)
+		http.Redirect(w, r, "/galleries", http.StatusFound)
 		return
 	}
 	http.Redirect(w, r, url.Path, http.StatusFound)
