@@ -2,7 +2,10 @@
 <div class="row">
   <div class="col-md-10 col-md-offset-1">
     <h2>Edit your gallery</h3>
-      <hr>
+    <a href="/galleries/{{.ID}}">
+      View this gallery
+    </a>
+    <hr>
   </div>
   <div class="col-md-12">
     {{template "editGalleryForm" .}}
@@ -39,8 +42,7 @@
   <div class="form-group">
     <label for="title" class="col-md-1 control-label">Title</label>
     <div class="col-md-10">
-      <input type="text" name="title" class="form-control" id="title"
-        placeholder="What is the title of your gallery?" value="{{.Title}}">
+      <input type="text" name="title" class="form-control" id="title" placeholder="What is the title of your gallery?" value="{{.Title}}">
     </div>
     <div class="col-md-1">
       <button type="submit" class="btn btn-default">Save</button>
@@ -60,8 +62,7 @@
 {{end}}
 
 {{define "uploadImageForm"}}
-<form action="/galleries/{{.ID}}/images" method="POST" enctype="multipart/form-data"
-  class="form-horizontal">
+<form action="/galleries/{{.ID}}/images" method="POST" enctype="multipart/form-data" class="form-horizontal">
   <div class="form-group">
     <label for="images" class="col-md-1 control-label">Add Images</label>
     <div class="col-md-10">
@@ -74,19 +75,32 @@
 {{end}}
 
 {{define "galleryImages"}}
-{{range .ImagesSplitN 6}}
-    
-<div class="col-md-5">
-  {{range .}}
-  <a href="{{.}}">
-<img src="{{.}}" class="thumbnail"/>
-</a>
-{{end}}
-  </div>
-{{end}}
-<style>
+  {{range .ImagesSplitN 6}}
+    <div class="col-md-2">
+      {{range .}}
+        <a href="{{.Path}}">
+          <img src="{{.Path}}" class="thumbnail">
+        </a>
+        {{template "deleteImageForm" .}}
+      {{end}}
+    </div>
+  {{end}}
+  <!--
+  Normally styles in the middle of your code is bad,
+  but for dev I think this is fine. We will fix it up
+  when we deploy
+  -->
+  <style>
     .thumbnail {
-      width: 100%
+      width: 100%;
+      margin-bottom: 6px;;
     }
-    </style>
+  </style>
+{{end}}
+
+
+{{define "deleteImageForm"}}
+<form action="/galleries/{{.GalleryID}}/images/{{.Filename}}/delete" method="POST">
+  <button type="submit" class="btn btn-default">Delete</button>
+</form>
 {{end}}
