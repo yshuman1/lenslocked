@@ -28,8 +28,7 @@ type Data struct {
 func (d *Data) SetAlert(err error) {
 	if pErr, ok := err.(PublicError); ok {
 		d.Alert = &Alert{
-			Level:   AlertLvlError,
-			Message: pErr.Public(),
+			Level: AlertLvlError, Message: pErr.Public(),
 		}
 	} else {
 		d.Alert = &Alert{
