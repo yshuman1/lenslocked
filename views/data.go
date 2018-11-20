@@ -1,6 +1,10 @@
 package views
 
-import "lenslocked.com/models"
+import (
+	"html/template"
+
+	"lenslocked.com/models"
+)
 
 const (
 	AlertLvlError   = "danger"
@@ -22,6 +26,7 @@ type Alert struct {
 type Data struct {
 	Alert *Alert
 	User  *models.User
+	CSRF  template.HTML
 	Yield interface{}
 }
 
