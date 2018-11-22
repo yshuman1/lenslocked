@@ -1,0 +1,6 @@
+lenslocked.blockchain-class.com{
+	gzip
+	proxy / localhost:3000{
+		transparent
+	}
+}
