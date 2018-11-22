@@ -16,7 +16,13 @@ import (
 func main() {
 	cfg := DefaultConfig()
 	dbCfg := DefaultPostgresConfig()
-	services, err := models.NewServices(dbCfg.Dialect(), dbCfg.ConnectionInfo())
+	services, err := models.NewServices(
+		models.WithGorm(dbCfg.Dialect(), dbCfg.ConnectionInfo()),
+		models.WithLogMode(!cfg.IsProd()),
+		models.WithUser(cfg.Pepper, cfg.HMACKey),
+		models.WithGallery(),
+		models.WithImage(),
+	)
 	must(err)
 	defer services.Close()
 	services.AutoMigrate()
@@ -62,9 +68,8 @@ func main() {
 
 	r.HandleFunc("/galleries/{id:[0-9]+}", galleriesC.Show).Methods("GET").Name("show_gallery")
 
-	//TODO config this
-	fmt.Println("server running on port :%d...", cfg.Port)
-	http.ListenAndServe(fmt.Sprintf("%d", cfg.Port), csrfMw(userMw.Apply(r)))
+	fmt.Printf("server running on port :%d...\n", cfg.Port)
+	http.ListenAndServe(fmt.Sprintf(":%d", cfg.Port), csrfMw(userMw.Apply(r)))
 }
 
 func must(err error) {
