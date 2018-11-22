@@ -13,17 +13,10 @@ import (
 	"github.com/gorilla/mux"
 )
 
-const (
-	host   = "localhost"
-	port   = 5432
-	user   = "yasin"
-	dbname = "lenslocked_dev"
-)
-
 func main() {
-	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s dbname=%s sslmode=disable",
-		host, port, user, dbname)
-	services, err := models.NewServices(psqlInfo)
+	cfg := DefaultConfig()
+	dbCfg := DefaultPostgresConfig()
+	services, err := models.NewServices(dbCfg.Dialect(), dbCfg.ConnectionInfo())
 	must(err)
 	defer services.Close()
 	services.AutoMigrate()
@@ -33,11 +26,9 @@ func main() {
 	usersC := controllers.NewUsers(services.User)
 	galleriesC := controllers.NewGalleries(services.Gallery, services.Image, r)
 
-	// TODO: put in config variable
-	isProd := false
 	b, err := rand.Bytes(32)
 	must(err)
-	csrfMw := csrf.Protect(b, csrf.Secure(isProd))
+	csrfMw := csrf.Protect(b, csrf.Secure(cfg.IsProd()))
 	userMw := middleware.User{UserService: services.User}
 	requireUserMw := middleware.RequireUser{User: userMw}
 
@@ -71,8 +62,9 @@ func main() {
 
 	r.HandleFunc("/galleries/{id:[0-9]+}", galleriesC.Show).Methods("GET").Name("show_gallery")
 
-	fmt.Println("server running on port :3000")
-	http.ListenAndServe(":3000", csrfMw(userMw.Apply(r)))
+	//TODO config this
+	fmt.Println("server running on port :%d...", cfg.Port)
+	http.ListenAndServe(fmt.Sprintf("%d", cfg.Port), csrfMw(userMw.Apply(r)))
 }
 
 func must(err error) {
