@@ -1,6 +1,6 @@
-lenslocked.blockchain-class.com{
+:80 {
 	gzip
-	proxy / localhost:3000{
+	proxy / localhost:3000 {
 		transparent
 	}
 }
