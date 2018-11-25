@@ -54,6 +54,8 @@ type UserDB interface {
 type UserService interface {
 	UserDB
 	Authenticate(email, password string) (*User, error)
+	InitiateReset(email string) (string, error)
+	CompleteReset(token, newPw string) (*User, error)
 }
 
 func NewUserService(db *gorm.DB, pepper, hmacKey string) UserService {
