@@ -58,6 +58,9 @@ var (
 	// ErrUserIDRequired is returned when a user ID is incorrect or not provied
 	ErrUserIDRequired privateError = "models: user ID is required"
 
+	// ErrTokenInvalid is returned when token given during pw reset isnt any good
+	ErrTokenInvalid modelError = "models: token provided is not valid"
+
 	// ErrTitleRequired is returned if a gallery is created without a title
 	ErrTitleRequired modelError = "models: title is required"
 )
