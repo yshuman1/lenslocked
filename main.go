@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"net/http"
@@ -28,11 +29,18 @@ func main() {
 		models.WithUser(cfg.Pepper, cfg.HMACKey),
 		models.WithGallery(),
 		models.WithImage(),
+		models.WithOAuth(),
 	)
+
 	must(err)
 	defer services.Close()
 	services.AutoMigrate()
-
+	_, err = services.OAuth.Find(1, "dropbox")
+	if err == nil {
+		panic("expected ErrNotFound")
+	} else {
+		fmt.Println("no OAuth tokens found!")
+	}
 	mgCfg := cfg.Mailgun
 	emailer := email.NewClient(
 		email.WithSender("Lenslocked.com support", "support@sandboxe1fcba60964c456ca7243a356972c85c.mailgun.org"), email.WithMailgun(mgCfg.Domain, mgCfg.APIKey, mgCfg.PublicAPIKey),
@@ -71,6 +79,7 @@ func main() {
 		http.Redirect(w, r, url, http.StatusFound)
 	}
 	r.HandleFunc("/oauth/dropbox/connect", dbxRedirect)
+
 	dbxCallback := func(w http.ResponseWriter, r *http.Request) {
 		r.ParseForm()
 		state := r.FormValue("state")
@@ -85,8 +94,13 @@ func main() {
 		cookie.Value = ""
 		cookie.Expires = time.Now()
 		http.SetCookie(w, cookie)
-
-		fmt.Fprintln(w, "code: ", r.FormValue("code"), "state: ", r.FormValue("state"))
+		code := r.FormValue("code")
+		token, err := dbxOauth.Exchange(context.TODO(), code)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+		fmt.Fprintf(w, "%+v", token)
 	}
 	r.HandleFunc("/oauth/dropbox/callback", dbxCallback)
 	r.Handle("/", staticC.Home).Methods("GET")

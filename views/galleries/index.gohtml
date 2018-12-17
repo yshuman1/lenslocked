@@ -15,18 +15,10 @@
         <tr>
           <th scope="row">{{.ID}}</th>
           <td>{{.Title}}</td>
-          <td>
-            <a href="/galleries/{{.ID}}">
-              View
-            </a>
-          </td>
-          <td>
-            <a href="/galleries/{{.ID}}/edit">
-              Edit
-            </a>
-          </td>
+          <td><a href="/galleries/{{.ID}}"> View </a></td>
+          <td><a href="/galleries/{{.ID}}/edit"> Edit </a></td>
         </tr>
-        {{end}}
+        {{ end }}
       </tbody>
     </table>
     <a href="/galleries/new" class="btn btn-primary pull-right">
@@ -34,4 +26,12 @@
     </a>
   </div>
 </div>
-{{end}}
+{{ end }}
+
+
+&{
+AccessToken:Q78PBnq9_QAAAAAAAAAAKPLLr81UvTvi5Bq2TKEjMVg4ny4ra9u5nLZFg1Ugn7RQ
+TokenType:bearer
+RefreshToken:
+Expiry:0001-01-01 00:00:00 +0000 UTC
+raw:map[access_token:Q78PBnq9_QAAAAAAAAAAKPLLr81UvTvi5Bq2TKEjMVg4ny4ra9u5nLZFg1Ugn7RQ token_type:bearer uid:724329821 account_id:dbid:AAAR6H49EMoqPRY-bL_-5uxsholsyug7LEo]}

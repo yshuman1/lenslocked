@@ -55,8 +55,11 @@ var (
 	// ErrRememberTooShort is returned when a remember token is not at least 32 bytes
 	ErrRememberTooShort privateError = "models: remember token must be at least 32 bytes"
 
-	// ErrUserIDRequired is returned when a user ID is incorrect or not provied
+	// ErrUserIDRequired is returned when a user ID is incorrect or not provided
 	ErrUserIDRequired privateError = "models: user ID is required"
+
+	// ErrServiceRequired is returned when a service is incorrect or not provided
+	ErrServiceRequired privateError = "models: service is required"
 
 	// ErrTokenInvalid is returned when token given during pw reset isnt any good
 	ErrTokenInvalid modelError = "models: token provided is not valid"
