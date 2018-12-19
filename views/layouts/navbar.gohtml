@@ -17,12 +17,14 @@
         <li><a href="/">Home</a></li>
         <li><a href="/contact">Contact</a></li>
         {{if .User}}
+        
         <li><a href="/galleries">Galleries</a></li>
 
         {{end}}
       </ul>
       <ul class="nav navbar-nav navbar-right">
-	{{if .User}}
+  {{if .User}}
+<li><a href="/oauth/dropbox/connect">Connect Dropbox</a></li>
 		<li>{{template "logoutForm"}}</li>
 	{{else}}
 	 <li><a href="/signup">Sign Up</a></li>
