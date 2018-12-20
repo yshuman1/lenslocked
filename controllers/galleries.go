@@ -5,9 +5,10 @@ import (
 	"log"
 	"net/http"
 	"strconv"
+	"strings"
+	"sync"
 
 	"github.com/gorilla/mux"
-
 	"lenslocked.com/context"
 	"lenslocked.com/models"
 	"lenslocked.com/views"
@@ -17,7 +18,7 @@ const (
 	ShowGallery = "show_gallery"
 	EditGallery = "edit_gallery"
 
-	maxMultipartMem = 1 << 20
+	maxMultipartMem = 1 << 20 // 1 megabyte
 )
 
 func NewGalleries(gs models.GalleryService, is models.ImageService, r *mux.Router) *Galleries {
@@ -26,10 +27,9 @@ func NewGalleries(gs models.GalleryService, is models.ImageService, r *mux.Route
 		ShowView:  views.NewView("bootstrap", "galleries/show"),
 		EditView:  views.NewView("bootstrap", "galleries/edit"),
 		IndexView: views.NewView("bootstrap", "galleries/index"),
-
-		gs: gs,
-		is: is,
-		r:  r,
+		gs:        gs,
+		is:        is,
+		r:         r,
 	}
 }
 
@@ -72,7 +72,7 @@ func (g *Galleries) Show(w http.ResponseWriter, r *http.Request) {
 	g.ShowView.Render(w, r, vd)
 }
 
-// get /galleries/:id/edit
+// GET /galleries/:id/edit
 func (g *Galleries) Edit(w http.ResponseWriter, r *http.Request) {
 	gallery, err := g.galleryByID(w, r)
 	if err != nil {
@@ -81,6 +81,7 @@ func (g *Galleries) Edit(w http.ResponseWriter, r *http.Request) {
 	user := context.User(r.Context())
 	if gallery.UserID != user.ID {
 		http.Error(w, "Gallery not found", http.StatusNotFound)
+		return
 	}
 	var vd views.Data
 	vd.Yield = gallery
@@ -96,13 +97,12 @@ func (g *Galleries) Update(w http.ResponseWriter, r *http.Request) {
 	user := context.User(r.Context())
 	if gallery.UserID != user.ID {
 		http.Error(w, "Gallery not found", http.StatusNotFound)
+		return
 	}
 	var vd views.Data
 	vd.Yield = gallery
-
 	var form GalleryForm
 	if err := parseForm(r, &form); err != nil {
-		log.Println(err)
 		vd.SetAlert(err)
 		g.EditView.Render(w, r, vd)
 		return
@@ -112,6 +112,7 @@ func (g *Galleries) Update(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		vd.SetAlert(err)
 		g.EditView.Render(w, r, vd)
+		return
 	}
 	vd.Alert = &views.Alert{
 		Level:   views.AlertLvlSuccess,
@@ -125,7 +126,6 @@ func (g *Galleries) Create(w http.ResponseWriter, r *http.Request) {
 	var vd views.Data
 	var form GalleryForm
 	if err := parseForm(r, &form); err != nil {
-		log.Println(err)
 		vd.SetAlert(err)
 		g.New.Render(w, r, vd)
 		return
@@ -149,6 +149,54 @@ func (g *Galleries) Create(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, url.Path, http.StatusFound)
 }
 
+// POST /galleries/:id/images/link
+func (g *Galleries) ImageViaLink(w http.ResponseWriter, r *http.Request) {
+	gallery, err := g.galleryByID(w, r)
+	if err != nil {
+		return
+	}
+	user := context.User(r.Context())
+	if gallery.UserID != user.ID {
+		http.Error(w, "Gallery not found", http.StatusNotFound)
+		return
+	}
+	var vd views.Data
+	vd.Yield = gallery
+	if err := r.ParseForm(); err != nil {
+		vd.SetAlert(err)
+		g.EditView.Render(w, r, vd)
+		return
+	}
+	files := r.PostForm["files"]
+
+	var wg sync.WaitGroup
+	wg.Add(len(files))
+	for _, fileURL := range files {
+		go func(url string) {
+			defer wg.Done()
+			resp, err := http.Get(url)
+			if err != nil {
+				log.Println("Failed to download the image from:", url)
+				return
+			}
+			defer resp.Body.Close()
+			pieces := strings.Split(url, "/")
+			filename := pieces[len(pieces)-1]
+			if err := g.is.Create(gallery.ID, resp.Body, filename); err != nil {
+				log.Println("Failed to create the image from:", url)
+			}
+		}(fileURL)
+	}
+	wg.Wait()
+	url, err := g.r.Get(EditGallery).URL("id", fmt.Sprintf("%v", gallery.ID))
+	if err != nil {
+		log.Println(err)
+		http.Redirect(w, r, "/galleries", http.StatusFound)
+		return
+	}
+	http.Redirect(w, r, url.Path, http.StatusFound)
+}
+
 // POST /galleries/:id/images
 func (g *Galleries) ImageUpload(w http.ResponseWriter, r *http.Request) {
 	gallery, err := g.galleryByID(w, r)
@@ -158,8 +206,8 @@ func (g *Galleries) ImageUpload(w http.ResponseWriter, r *http.Request) {
 	user := context.User(r.Context())
 	if gallery.UserID != user.ID {
 		http.Error(w, "Gallery not found", http.StatusNotFound)
+		return
 	}
-
 	var vd views.Data
 	vd.Yield = gallery
 	err = r.ParseMultipartForm(maxMultipartMem)
@@ -168,10 +216,10 @@ func (g *Galleries) ImageUpload(w http.ResponseWriter, r *http.Request) {
 		g.EditView.Render(w, r, vd)
 		return
 	}
-	// iterate over files and process them
+
 	files := r.MultipartForm.File["images"]
 	for _, f := range files {
-		// open uploaded file
+		// Open the uploaded file
 		file, err := f.Open()
 		if err != nil {
 			vd.SetAlert(err)
@@ -195,7 +243,8 @@ func (g *Galleries) ImageUpload(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, url.Path, http.StatusFound)
 }
 
-// POST /galleries/:id/images/:filename/deletes
+// POST /galleries/:id/images/:filename/delete
+//   data:
 func (g *Galleries) ImageDelete(w http.ResponseWriter, r *http.Request) {
 	gallery, err := g.galleryByID(w, r)
 	if err != nil {
@@ -204,22 +253,24 @@ func (g *Galleries) ImageDelete(w http.ResponseWriter, r *http.Request) {
 	user := context.User(r.Context())
 	if gallery.UserID != user.ID {
 		http.Error(w, "Gallery not found", http.StatusNotFound)
+		return
 	}
-
 	filename := mux.Vars(r)["filename"]
-	var vd views.Data
 	i := models.Image{
 		Filename:  filename,
 		GalleryID: gallery.ID,
 	}
 	err = g.is.Delete(&i)
 	if err != nil {
+		var vd views.Data
+		vd.Yield = gallery
 		vd.SetAlert(err)
 		g.EditView.Render(w, r, vd)
 		return
 	}
 	url, err := g.r.Get(EditGallery).URL("id", fmt.Sprintf("%v", gallery.ID))
 	if err != nil {
+		log.Println(err)
 		http.Redirect(w, r, "/galleries", http.StatusFound)
 		return
 	}
@@ -235,6 +286,7 @@ func (g *Galleries) Delete(w http.ResponseWriter, r *http.Request) {
 	user := context.User(r.Context())
 	if gallery.UserID != user.ID {
 		http.Error(w, "Gallery not found", http.StatusNotFound)
+		return
 	}
 	var vd views.Data
 	err = g.gs.Delete(gallery.ID)
@@ -246,6 +298,7 @@ func (g *Galleries) Delete(w http.ResponseWriter, r *http.Request) {
 	}
 	http.Redirect(w, r, "/galleries", http.StatusFound)
 }
+
 func (g *Galleries) galleryByID(w http.ResponseWriter, r *http.Request) (*models.Gallery, error) {
 	vars := mux.Vars(r)
 	idStr := vars["id"]
@@ -266,7 +319,7 @@ func (g *Galleries) galleryByID(w http.ResponseWriter, r *http.Request) (*models
 		}
 		return nil, err
 	}
-	images, err := g.is.ByGalleryID(gallery.ID)
+	images, _ := g.is.ByGalleryID(gallery.ID)
 	gallery.Images = images
 	return gallery, nil
 }

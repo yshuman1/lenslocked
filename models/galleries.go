@@ -1,8 +1,6 @@
 package models
 
-import (
-	"github.com/jinzhu/gorm"
-)
+import "github.com/jinzhu/gorm"
 
 // Gallery is our image container resources that visitors
 // view
@@ -18,8 +16,15 @@ func (g *Gallery) ImagesSplitN(n int) [][]Image {
 	for i := 0; i < n; i++ {
 		ret[i] = make([]Image, 0)
 	}
-
 	for i, img := range g.Images {
+		// % is the remainder operator in Go
+		// eg:
+		//    0%3 = 0
+		//    1%3 = 1
+		//    2%3 = 2
+		//    3%3 = 0
+		//    4%3 = 1
+		//    5%3 = 2
 		bucket := i % n
 		ret[bucket] = append(ret[bucket], img)
 	}
@@ -109,7 +114,10 @@ func (gg *galleryGorm) ByID(id uint) (*Gallery, error) {
 
 func (gg *galleryGorm) ByUserID(userID uint) ([]Gallery, error) {
 	var galleries []Gallery
-	gg.db.Where("user_id = ?", userID).Find(&galleries)
+	err := gg.db.Where("user_id = ?", userID).Find(&galleries).Error
+	if err != nil {
+		return nil, err
+	}
 	return galleries, nil
 }
 

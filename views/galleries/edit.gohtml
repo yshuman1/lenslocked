@@ -2,10 +2,10 @@
 <div class="row">
   <div class="col-md-10 col-md-offset-1">
     <h2>Edit your gallery</h3>
-    <a href="/galleries/{{.ID}}">
-      View this gallery
-    </a>
-    <hr>
+      <a href="/galleries/{{.ID}}">
+        View this gallery
+      </a>
+      <hr>
   </div>
   <div class="col-md-12">
     {{template "editGalleryForm" .}}
@@ -27,6 +27,12 @@
   </div>
 </div>
 <div class="row">
+  <div class="col-md-10 col-md-offset-1" id="dropbox-button-container">
+    <!-- DBX Button -->
+    {{template "dropboxImageForm" .}}
+  </div>
+</div>
+<div class="row">
   <div class="col-md-10 col-md-offset-1">
     <h3>Dangerous buttons...</h3>
     <hr>
@@ -37,13 +43,40 @@
 </div>
 {{end}}
 
+{{define "javascript-footer"}}
+<script type="text/javascript" src="https://www.dropbox.com/static/api/2/dropins.js"
+  id="dropboxjs" data-app-key="3czg7q94wyl7uso"></script>
+<script>
+  var dbxForm = document.getElementById("dropbox-image-form");
+  var options = {
+    success: function (files) {
+      for (i = 0; i < files.length; i++) {
+        var input = document.createElement("input");
+        input.type = "hidden";
+        input.name = "files";
+        input.value = files[i].link;
+        dbxForm.appendChild(input);
+      }
+      dbxForm.submit();
+    },
+    linkType: "direct",
+    multiselect: true,
+    extensions: ["images"],
+    folderselect: false,
+  };
+  var button = Dropbox.createChooseButton(options);
+  document.getElementById("dropbox-button-container").appendChild(button);
+</script>
+{{end}}
+
 {{define "editGalleryForm"}}
 <form action="/galleries/{{.ID}}/update" method="POST" class="form-horizontal">
   {{csrfField}}
   <div class="form-group">
     <label for="title" class="col-md-1 control-label">Title</label>
     <div class="col-md-10">
-      <input type="text" name="title" class="form-control" id="title" placeholder="What is the title of your gallery?" value="{{.Title}}">
+      <input type="text" name="title" class="form-control" id="title"
+        placeholder="What is the title of your gallery?" value="{{.Title}}">
     </div>
     <div class="col-md-1">
       <button type="submit" class="btn btn-default">Save</button>
@@ -63,8 +96,17 @@
 </form>
 {{end}}
 
+{{define "dropboxImageForm"}}
+<form action="/galleries/{{.ID}}/images/link" method="POST" enctype="multipart/form-data"
+  class="form-horizontal" id="dropbox-image-form">
+  {{csrfField}}
+  <!-- Filled in with Dropbox JS -->
+</form>
+{{end}}
+
 {{define "uploadImageForm"}}
-<form action="/galleries/{{.ID}}/images" method="POST" enctype="multipart/form-data" class="form-horizontal">
+<form action="/galleries/{{.ID}}/images" method="POST" enctype="multipart/form-data"
+  class="form-horizontal">
   {{csrfField}}
   <div class="form-group">
     <label for="images" class="col-md-1 control-label">Add Images</label>
@@ -78,21 +120,22 @@
 {{end}}
 
 {{define "galleryImages"}}
-  {{range .ImagesSplitN 6}}
-    <div class="col-md-2">
-      {{range .}}
-        <a href="{{.Path}}">
-          <img src="{{.Path}}" class="thumbnail">
-        </a>
-        {{template "deleteImageForm" .}}
-      {{end}}
-    </div>
+{{range .ImagesSplitN 6}}
+<div class="col-md-2">
+  {{range .}}
+  <a href="{{.Path}}">
+    <img src="{{.Path}}" class="thumbnail">
+  </a>
+  {{template "deleteImageForm" .}}
   {{end}}
+</div>
+{{end}}
 {{end}}
 
 
 {{define "deleteImageForm"}}
-<form action="/galleries/{{.GalleryID}}/images/{{.Filename | urlquery}}/delete" method="POST">
+<form action="/galleries/{{.GalleryID}}/images/{{.Filename | urlquery}}/delete"
+  method="POST">
   {{csrfField}}
   <button type="submit" class="btn btn-default">Delete</button>
 </form>
